@@ -3,6 +3,10 @@ import "flatpickr/dist/flatpickr.min.css";
 import iziToast from "izitoast/dist/js/iziToast.min.js";
 import "izitoast/dist/css/iziToast.min.css";
 
+const startButton = document.querySelector('[data-start]');
+const dateTimePicker = document.querySelector('#datetime-picker');
+let timerInterval;
+
 const options = {
   enableTime: true,
   time_24hr: true,
@@ -12,25 +16,24 @@ const options = {
     const selectedDate = selectedDates[0];
 
     if (selectedDate < new Date()) {
-      document.querySelector('[data-start]').disabled = true;
+      startButton.disabled = true;
       iziToast.error({
         title: 'Error',
         message: 'Please choose a date in the future',
       });
     } else {
-      document.querySelector('[data-start]').disabled = false;
+      startButton.disabled = false;
     }
   },
 };
 
 flatpickr("#datetime-picker", options);
-
-document.querySelector('[data-start]').addEventListener('click', startTimer);
+startButton.addEventListener('click', startTimer);
 
 function startTimer() {
-  const userSelectedDate = new Date(document.querySelector('#datetime-picker').value);
+  const userSelectedDate = new Date(dateTimePicker.value);
 
-   if (userSelectedDate <= new Date()) {
+  if (userSelectedDate <= new Date()) {
     iziToast.error({
       title: 'Error',
       message: 'Please choose a date in the future',
@@ -38,7 +41,16 @@ function startTimer() {
     return;
   }
 
-  const timerInterval = setInterval(updateTimer, 1000);
+  if (timerIsRunning()) {
+    iziToast.error({
+      title: 'Error',
+      message: 'Timer is already running. Please wait for it to finish.',
+    });
+    return;
+  }
+
+  clearInterval(timerInterval); 
+  timerInterval = setInterval(updateTimer, 1000);
 
   function updateTimer() {
     const timeLeft = userSelectedDate - new Date();
@@ -76,4 +88,8 @@ function convertMs(ms) {
   const seconds = Math.floor((((ms % day) % hour) % minute) / second);
 
   return { days, hours, minutes, seconds };
+}
+
+function timerIsRunning() {
+  return typeof timerInterval !== 'undefined';
 }
