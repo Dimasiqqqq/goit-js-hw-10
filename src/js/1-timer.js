@@ -41,15 +41,10 @@ function startTimer() {
     return;
   }
 
-  if (timerIsRunning()) {
-    iziToast.error({
-      title: 'Error',
-      message: 'Timer is already running. Please wait for it to finish.',
-    });
-    return;
+  if (timerInterval) {
+    clearInterval(timerInterval);
   }
 
-  clearInterval(timerInterval); 
   timerInterval = setInterval(updateTimer, 1000);
 
   function updateTimer() {
@@ -58,11 +53,14 @@ function startTimer() {
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
       updateInterface({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      startButton.disabled = false;
     } else {
       const { days, hours, minutes, seconds } = convertMs(timeLeft);
       updateInterface({ days, hours, minutes, seconds });
     }
   }
+
+  startButton.disabled = true;
 
   function updateInterface({ days, hours, minutes, seconds }) {
     document.querySelector('[data-days]').textContent = addLeadingZero(days);
@@ -88,8 +86,4 @@ function convertMs(ms) {
   const seconds = Math.floor((((ms % day) % hour) % minute) / second);
 
   return { days, hours, minutes, seconds };
-}
-
-function timerIsRunning() {
-  return typeof timerInterval !== 'undefined';
 }
