@@ -7,6 +7,21 @@ const startButton = document.querySelector('[data-start]');
 const dateTimePicker = document.querySelector('#datetime-picker');
 let timerInterval;
 
+// Визначення функції для перевірки, чи потрібно вимкнути кнопку "Start"
+function checkStartButtonState() {
+  const selectedDate = flatpickr.parseDate(dateTimePicker.value, "Y-m-d H:i");
+  const currentDate = new Date();
+
+  if (selectedDate <= currentDate) {
+    startButton.disabled = true;
+  } else {
+    startButton.disabled = false;
+  }
+}
+
+// Виклик функції при завантаженні сторінки
+checkStartButtonState();
+
 const options = {
   enableTime: true,
   time_24hr: true,
@@ -31,7 +46,7 @@ flatpickr("#datetime-picker", options);
 startButton.addEventListener('click', startTimer);
 
 function startTimer() {
-  const userSelectedDate = new Date(dateTimePicker.value);
+  const userSelectedDate = flatpickr.parseDate(dateTimePicker.value, "Y-m-d H:i");
 
   if (userSelectedDate <= new Date()) {
     iziToast.error({
@@ -41,37 +56,42 @@ function startTimer() {
     return;
   }
 
+  // Перевірка, чи існує інтервал перед створенням нового
   if (timerInterval) {
+    // Скидання попереднього таймера перед створенням нового
     clearInterval(timerInterval);
+    timerInterval = undefined;
   }
 
-  timerInterval = setInterval(updateTimer, 1000);
+  timerInterval = setInterval(() => updateTimer(userSelectedDate), 1000);
 
-  function updateTimer() {
-    const timeLeft = userSelectedDate - new Date();
-
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
-      updateInterface({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      startButton.disabled = false;
-    } else {
-      const { days, hours, minutes, seconds } = convertMs(timeLeft);
-      updateInterface({ days, hours, minutes, seconds });
-    }
-  }
-
+  // Початкове встановлення кнопки "Start" як неактивної при початку таймера
   startButton.disabled = true;
+}
 
-  function updateInterface({ days, hours, minutes, seconds }) {
-    document.querySelector('[data-days]').textContent = addLeadingZero(days);
-    document.querySelector('[data-hours]').textContent = addLeadingZero(hours);
-    document.querySelector('[data-minutes]').textContent = addLeadingZero(minutes);
-    document.querySelector('[data-seconds]').textContent = addLeadingZero(seconds);
-  }
+function updateTimer(userSelectedDate) {
+  const timeLeft = userSelectedDate - new Date();
 
-  function addLeadingZero(value) {
-    return value < 10 ? `0${value}` : value;
+  if (timeLeft <= 0) {
+    clearInterval(timerInterval);
+    updateInterface({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+    // Після закінчення таймера встановлюємо кнопку "Start" як активну
+    startButton.disabled = false;
+  } else {
+    const { days, hours, minutes, seconds } = convertMs(timeLeft);
+    updateInterface({ days, hours, minutes, seconds });
   }
+}
+
+function updateInterface({ days, hours, minutes, seconds }) {
+  document.querySelector('[data-days]').textContent = addLeadingZero(days);
+  document.querySelector('[data-hours]').textContent = addLeadingZero(hours);
+  document.querySelector('[data-minutes]').textContent = addLeadingZero(minutes);
+  document.querySelector('[data-seconds]').textContent = addLeadingZero(seconds);
+}
+
+function addLeadingZero(value) {
+  return value < 10 ? `0${value}` : value;
 }
 
 function convertMs(ms) {
